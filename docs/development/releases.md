@@ -10,6 +10,8 @@ All WindCli desktop, web service and MCP GitHub Release assets are published to 
 
 Desktop server bundles may also accompany the corresponding `v<version>` desktop release because the desktop installer requests that exact version tag. Preserve existing bundle names expected by the installer. MCP and web tags must not replace desktop latest-release metadata. A component release does not imply that other components have been built or released.
 
+The existing application source checkout remains separate. Its desktop updater and server bundle download URLs target this repository. When an application GitHub Actions workflow publishes here from another source repository, configure `RELEASE_REPOSITORY_TOKEN` in that source repository with contents-write access to `CaineWind/WindCli`; the source repository's built-in `GITHUB_TOKEN` cannot write to another repository. Release notes must link the original application source commit. This is not required by this repository's own MCP workflow.
+
 ## MCP Publication
 
 The `MCP Release` workflow runs type checking, builds and all protocol/security tests on Windows and Linux. A pushed `mcp-v<version>` tag must match `packages/windbrowser-mcp/package.json`. Release publication waits for both operating systems to pass, rebuilds from the tagged source, packages the npm tarball and extension, and creates a GitHub Release with checksums.
