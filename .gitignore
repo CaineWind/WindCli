@@ -1,4 +1,17 @@
 # Build and Release Folders
+node_modules/
+release/
+**/dist/
+.tmp/
+.data/
+logs/
+.env
+.env.*
+!.env.example
+*.tgz
+*.db
+*.db-shm
+*.db-wal
 bin-debug/
 bin-release/
 [Oo]bj/
