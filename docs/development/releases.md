@@ -43,6 +43,16 @@ source maps and unminified product JavaScript in the CLI/Web package and server
 runtime archives. This validation can require changes in the private application's
 build pipeline before a new version may be published; it must not be bypassed to
 ship development source. Existing legacy releases are not changed automatically.
+
+On 2026-10-18, the source-containing `v1.47.3` release and its tag were retired,
+including installers, update metadata, CLI/Web package and desktop server bundles.
+Old desktop first-start downloads and update checks may fail until a clean application
+release is available. Do not restore the retired archives. The original repository
+was moved to a private archive; the public repository at the same URL was recreated
+with sanitized distribution history and the verified `mcp-v0.1.1` release only.
+Repository identity, Actions run history and release asset IDs changed. Configure
+repository-scoped publication tokens against the new repository before using them.
+
 An interrupted draft can resume only when its source commit and every existing
 asset's size and GitHub SHA-256 digest match the validated local files. Remaining
 assets upload concurrently; remote digests are checked again before publishing.
