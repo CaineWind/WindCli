@@ -21,7 +21,13 @@ let reference = api(`repos/${source}/git/ref/tags/${tag}`).object;
 if (reference.type === 'tag') reference = api(`repos/${source}/git/tags/${reference.sha}`).object;
 assert.equal(reference.type, 'commit');
 for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop Release']]) {
-  const run = api(`repos/${source}/actions/runs/${runId}`);
+  let run = api(`repos/${source}/actions/runs/${runId}`);
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (run.status !== 'completed' && Date.now() < deadline) {
+    console.log(`Waiting for ${workflow} (${runId}) to complete...`);
+    await new Promise(resolve => setTimeout(resolve, 30_000));
+    run = api(`repos/${source}/actions/runs/${runId}`);
+  }
   assert.equal(run.name, workflow, `Unexpected workflow for ${runId}`);
   assert.equal(run.head_sha, reference.sha, 'Build must match the annotated source tag');
   assert.equal(run.head_branch, tag, 'Build must use the version tag');
