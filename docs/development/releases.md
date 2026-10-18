@@ -36,6 +36,9 @@ retry failed transfers and retain completed segments for a later retry. The publ
 checks the assembled release files against the original build checksums before publication.
 
 The publisher refuses to modify public releases or overwrite existing assets.
+An interrupted draft can resume only when its source commit and every existing
+asset's size and GitHub SHA-256 digest match the validated local files. Remaining
+assets upload concurrently; remote digests are checked again before publishing.
 Source commit and build links are retained in the release notes. Unsigned macOS
 builds are available for manual installation; automatic installation requires
 Apple code-signing credentials in the application's desktop build workflow.

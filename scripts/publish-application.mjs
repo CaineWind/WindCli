@@ -116,11 +116,30 @@ const releases = api(`repos/${destination}/releases?per_page=100`);
 const existing = releases.find(release => release.tag_name === tag);
 if (existing) {
   assert(existing.draft, 'Refusing to modify a published release');
-  assert.equal(existing.assets.length, 0, 'Refusing to overwrite existing release assets');
+  assert(existing.body.includes(reference.sha), 'Draft must reference this source commit');
+  for (const asset of existing.assets) {
+    assert(byName.has(asset.name), `Unexpected draft asset: ${asset.name}`);
+    assert.equal(asset.state, 'uploaded', `Draft asset is incomplete: ${asset.name}`);
+    assert.equal(asset.size, fs.statSync(byName.get(asset.name)).size);
+    assert.equal(asset.digest, `sha256:${await hash(byName.get(asset.name), 'sha256')}`,
+      `Refusing to overwrite mismatched draft asset: ${asset.name}`);
+  }
 } else {
   gh('release', 'create', tag, '--repo', destination, '--target', 'main', '--draft', '--title', `WindCli ${tag}`, '--notes-file', notesPath);
 }
-for (const file of byName.values()) gh('release', 'upload', tag, file, '--repo', destination);
+const uploaded = new Set(existing?.assets.map(asset => asset.name));
+const pending = [...byName].filter(([name]) => !uploaded.has(name));
+if (pending.length) {
+  console.log(`Uploading ${pending.length} validated release assets concurrently`);
+  execFileSync('gh', ['release', 'upload', tag, ...pending.map(([, file]) => file), '--repo', destination],
+    { stdio: 'inherit' });
+}
+const draft = api(`repos/${destination}/releases?per_page=100`).find(release => release.tag_name === tag);
+assert(draft?.draft && draft.assets.length === byName.size, 'Draft must contain every validated asset');
+for (const asset of draft.assets) {
+  assert(byName.has(asset.name) && asset.state === 'uploaded', `Unexpected uploaded asset: ${asset.name}`);
+  assert.equal(asset.digest, `sha256:${await hash(byName.get(asset.name), 'sha256')}`);
+}
 gh('release', 'edit', tag, '--repo', destination, '--notes-file', notesPath, '--draft=false', '--latest');
 assert.equal(api(`repos/${destination}/releases/latest`).tag_name, tag);
 const result = `Published https://github.com/${destination}/releases/tag/${tag} with ${byName.size} validated assets.`;
