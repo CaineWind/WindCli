@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { auditProductArchive } from './audit-product-archive.mjs';
 
 const source = 'CaineWind/wacli';
 const destination = 'CaineWind/WindCli';
@@ -86,6 +87,7 @@ for (const suffix of ['.exe', '.dmg', '.zip']) {
 }
 const bundles = [...byName.keys()].filter(name => name.startsWith(`cloudcli-local-server-${version}-`) && name.endsWith('.tar.gz'));
 assert.equal(bundles.length, 2, 'Both desktop server runtimes are required');
+for (const name of [`wind-agent-cli-${version}.tgz`, ...bundles]) auditProductArchive(byName.get(name));
 for (const name of bundles) {
   assert(byName.has(`${name}.sha256`), `Missing checksum for ${name}`);
   const checksum = fs.readFileSync(byName.get(`${name}.sha256`), 'utf8').trim().split(/\s+/)[0];

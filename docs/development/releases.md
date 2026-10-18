@@ -38,6 +38,11 @@ retry failed transfers and retain completed segments for a later retry. The publ
 checks the assembled release files against the original build checksums before publication.
 
 The publisher refuses to modify public releases or overwrite existing assets.
+Future application publication also rejects first-party TypeScript, declarations,
+source maps and unminified product JavaScript in the CLI/Web package and server
+runtime archives. This validation can require changes in the private application's
+build pipeline before a new version may be published; it must not be bypassed to
+ship development source. Existing legacy releases are not changed automatically.
 An interrupted draft can resume only when its source commit and every existing
 asset's size and GitHub SHA-256 digest match the validated local files. Remaining
 assets upload concurrently; remote digests are checked again before publishing.
