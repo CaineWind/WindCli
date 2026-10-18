@@ -14,8 +14,6 @@ GitHub's `/releases/latest` endpoint is not a component filter: before the first
 
 The existing application source checkout remains separate. Its desktop updater and server bundle download URLs target this repository. When an application GitHub Actions workflow publishes here from another source repository, configure `RELEASE_REPOSITORY_TOKEN` in that source repository with contents-write access to `CaineWind/WindCli`; the source repository's built-in `GITHUB_TOKEN` cannot write to another repository. Release notes must link the original application source commit. This is not required by this repository's own MCP workflow.
 
-## MCP Publication
-
 ## Application Publication
 
 Build the application's version tag in `CaineWind/wacli` using its `Release` and
@@ -32,7 +30,7 @@ Source commit and build links are retained in the release notes. Unsigned macOS
 builds are available for manual installation; automatic installation requires
 Apple code-signing credentials in the application's desktop build workflow.
 
-## MCP Build
+## MCP Publication
 
 The `MCP Release` workflow runs type checking, builds and all protocol/security tests on Windows and Linux. A pushed `mcp-v<version>` tag must match `packages/windbrowser-mcp/package.json`. Release publication waits for both operating systems to pass, rebuilds from the tagged source, packages the npm tarball and extension, and creates a GitHub Release with checksums.
 
