@@ -2,6 +2,8 @@
 
 All WindCli desktop, web service and MCP GitHub Release assets are published to `CaineWind/WindCli`.
 
+This is a distribution repository. Product development source, tests, declarations and source maps must not be tracked here. Application source remains in its separate source repository; MCP source is maintained in the private `WindBrowser` development checkout. Public product code must be a compiled/minified Release attachment. Documentation, component licenses and publication automation are permitted in this repository.
+
 | Component | Tag | Asset convention | Latest |
 | --- | --- | --- | --- |
 | Desktop client | `v<version>` | Installer, updater metadata and matching server bundles | Desktop stable releases only |
@@ -45,23 +47,25 @@ Apple code-signing credentials in the application's desktop build workflow.
 
 ## MCP Publication
 
-The `MCP Release` workflow runs type checking, builds and all protocol/security tests on Windows and Linux. A pushed `mcp-v<version>` tag must match `packages/windbrowser-mcp/package.json`. Release publication waits for both operating systems to pass, rebuilds from the tagged source, packages the npm tarball and extension, and creates a GitHub Release with checksums.
+Build and test MCP in the separate `WindBrowser` source directory. Its `release:assets` script bundles/minifies the Node backend, minifies the console and extension, removes development metadata and emits no TypeScript, declarations or source maps. Development source is never checked out by this repository's publication workflow.
 
 ```powershell
-Set-Location packages/windbrowser-mcp
+Set-Location ../WindBrowser
 npm ci
 npm run typecheck
 npm run build
 npm test
-npm run release:assets -- ../../release/mcp
+npm run release:assets
 ```
 
-Commit reviewed source and version changes, push the main branch, then create and push an annotated `mcp-v<version>` tag. The workflow never publishes to the npm registry and refuses to overwrite an existing GitHub Release. Correct published content by releasing a new version.
+Run the actual Chrome extension acceptance against `WindBrowser/release/package` before publication. From the distribution repository, set `RELEASE_TAG=mcp-v<version>`, `MCP_RELEASE_DIR` to the private build output's `release/assets` directory and `MCP_VERIFIER_ROOT` to a directory containing `node_modules/jszip`. Run `node scripts/publish-mcp.mjs` with existing GitHub CLI authentication. `MCP_VALIDATE_ONLY=1` validates locally without publishing. `MCP_DRAFT_ONLY=1` stages a verified draft without publishing it.
 
-Local packaging and the release workflow use the same `scripts/release.mjs`. The tarball contains compiled code, console assets, extension, packaged Agent instructions, README and AGPL license. It excludes tests, node_modules, credentials and runtime data. Install the downloaded tarball with `npm install --global ./windbrowser-mcp-<version>.tgz`; npm downloads its declared dependencies during installation.
+The `MCP Publication` workflow can publish a pre-staged draft using its tag as input. It downloads only the draft's prebuilt tarball, extension ZIP and checksums. The publisher checks every checksum, rejects source/development files and non-minified JavaScript, and verifies uploaded GitHub asset digests before publishing. It refuses to overwrite an existing public release. Publish changed artifacts under a new component version. It does not publish to the npm registry.
+
+The tarball contains minified runtime code, console assets, extension, packaged Agent instructions, README and AGPL license. Install it with `npm install --global ./windbrowser-mcp-<version>.tgz`; npm downloads its declared runtime dependencies during installation.
 
 Verify downloads by comparing their SHA-256 values with `SHA256SUMS` from the same release. These checksums detect mismatched or damaged files; they are not independent code-signing attestations.
 
 ## Licenses
 
-The root Apache-2.0 license covers the original repository scaffold. The extracted WindBrowser source and distributable use the AGPL-3.0-or-later license in `packages/windbrowser-mcp/LICENSE`. Preserve this component license and upstream attribution.
+The root Apache-2.0 license covers the original repository scaffold. WindBrowser's distributable retains its AGPL-3.0-or-later LICENSE. Separating source storage and minifying a distribution do not change the component license or source provision requirements. Preserve component licenses and upstream attribution.
