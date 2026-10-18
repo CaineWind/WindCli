@@ -31,6 +31,9 @@ Maintainers can instead run `scripts/publish-application.mjs` locally with their
 existing GitHub CLI authentication, without exporting or uploading any credential.
 Set `RELEASE_TAG`, `PACKAGE_RUN`, `DESKTOP_RUN` and `MANIFEST_PARSER_ROOT` (a directory
 with `node_modules/js-yaml`) before running it. Local downloads remain under `release/`.
+On Windows, PowerShell 7 and curl download artifacts in bounded parallel ranges,
+retry failed transfers and retain completed segments for a later retry. The publisher
+checks the assembled release files against the original build checksums before publication.
 
 The publisher refuses to modify public releases or overwrite existing assets.
 Source commit and build links are retained in the release notes. Unsigned macOS

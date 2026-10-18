@@ -42,9 +42,15 @@ for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop 
 
 for (const [run, name] of [[packageRun, 'application-package'], [desktopRun, 'desktop-macos'], [desktopRun, 'desktop-windows']]) {
   console.log(`Downloading verified ${name} from source run ${run}`);
-  sourceGh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
+  if (process.platform === 'win32') {
+    execFileSync('pwsh', ['-NoProfile', '-File', 'scripts/download-artifact.ps1', '-Repository', source,
+      '-Run', run, '-Name', name, '-Destination', path.join(root, name)], { stdio: 'inherit' });
+  } else {
+    sourceGh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
+  }
 }
-const files = fs.readdirSync(root, { recursive: true, withFileTypes: true })
+const files = ['application-package', 'desktop-macos', 'desktop-windows'].flatMap(directory =>
+  fs.readdirSync(path.join(root, directory), { recursive: true, withFileTypes: true }))
   .filter(item => item.isFile())
   .map(item => path.join(item.parentPath, item.name));
 const byName = new Map();
