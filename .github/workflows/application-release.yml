@@ -1,0 +1,47 @@
+name: Application Publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable application tag (vX.Y.Z)
+        required: true
+        type: string
+      package_run:
+        description: Successful Release workflow run in CaineWind/wacli
+        required: true
+        type: string
+      desktop_run:
+        description: Successful Desktop Release workflow run in CaineWind/wacli
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: application-publication-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+      - name: Install manifest parser
+        run: npm install --prefix "$RUNNER_TEMP/release-verification" --ignore-scripts --no-audit --no-fund js-yaml@4.1.1
+      - name: Validate artifacts and publish complete application release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PACKAGE_RUN: ${{ inputs.package_run }}
+          DESKTOP_RUN: ${{ inputs.desktop_run }}
+          MANIFEST_PARSER_ROOT: ${{ runner.temp }}/release-verification
+        run: node scripts/publish-application.mjs

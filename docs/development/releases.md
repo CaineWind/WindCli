@@ -16,6 +16,24 @@ The existing application source checkout remains separate. Its desktop updater a
 
 ## MCP Publication
 
+## Application Publication
+
+Build the application's version tag in `CaineWind/wacli` using its `Release` and
+`Desktop Release` workflows. After both succeed, run this repository's
+`Application Publication` workflow with the tag and the two source run IDs.
+It verifies that both successful push runs match the annotated source tag,
+downloads their artifacts, validates updater SHA-512 values, build SHA-256
+checksums and server runtime versions, and publishes all assets together as
+the latest stable desktop release. It uses this repository's GitHub token and
+does not publish to npm or require a stored personal token.
+
+The publisher refuses to modify public releases or overwrite existing assets.
+Source commit and build links are retained in the release notes. Unsigned macOS
+builds are available for manual installation; automatic installation requires
+Apple code-signing credentials in the application's desktop build workflow.
+
+## MCP Build
+
 The `MCP Release` workflow runs type checking, builds and all protocol/security tests on Windows and Linux. A pushed `mcp-v<version>` tag must match `packages/windbrowser-mcp/package.json`. Release publication waits for both operating systems to pass, rebuilds from the tagged source, packages the npm tarball and extension, and creates a GitHub Release with checksums.
 
 ```powershell
