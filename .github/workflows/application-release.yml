@@ -40,6 +40,7 @@ jobs:
       - name: Validate artifacts and publish complete application release
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_GH_TOKEN: ${{ secrets.SOURCE_REPOSITORY_READ_TOKEN || github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           PACKAGE_RUN: ${{ inputs.package_run }}
           DESKTOP_RUN: ${{ inputs.desktop_run }}

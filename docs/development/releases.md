@@ -22,8 +22,15 @@ Build the application's version tag in `CaineWind/wacli` using its `Release` and
 It verifies that both successful push runs match the annotated source tag,
 downloads their artifacts, validates updater SHA-512 values, build SHA-256
 checksums and server runtime versions, and publishes all assets together as
-the latest stable desktop release. It uses this repository's GitHub token and
-does not publish to npm or require a stored personal token.
+the latest stable desktop release. It uses this repository's GitHub token for
+publication and does not publish to npm. When the source repository is private,
+configure `SOURCE_REPOSITORY_READ_TOKEN` with read-only Contents and Actions access
+to `CaineWind/wacli`. Do not store a broadly scoped local maintainer token.
+
+Maintainers can instead run `scripts/publish-application.mjs` locally with their
+existing GitHub CLI authentication, without exporting or uploading any credential.
+Set `RELEASE_TAG`, `PACKAGE_RUN`, `DESKTOP_RUN` and `MANIFEST_PARSER_ROOT` (a directory
+with `node_modules/js-yaml`) before running it. Local downloads remain under `release/`.
 
 The publisher refuses to modify public releases or overwrite existing assets.
 Source commit and build links are retained in the release notes. Unsigned macOS

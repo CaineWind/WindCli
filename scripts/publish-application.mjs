@@ -16,17 +16,22 @@ const version = tag.slice(1);
 const root = path.resolve('release/application', tag);
 fs.mkdirSync(root, { recursive: true });
 const gh = (...args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+const sourceGh = (...args) => execFileSync('gh', args, {
+  encoding: 'utf8', maxBuffer: 8 * 1024 * 1024,
+  env: process.env.SOURCE_GH_TOKEN ? { ...process.env, GH_TOKEN: process.env.SOURCE_GH_TOKEN } : process.env,
+});
 const api = endpoint => JSON.parse(gh('api', endpoint));
-let reference = api(`repos/${source}/git/ref/tags/${tag}`).object;
-if (reference.type === 'tag') reference = api(`repos/${source}/git/tags/${reference.sha}`).object;
+const sourceApi = endpoint => JSON.parse(sourceGh('api', endpoint));
+let reference = sourceApi(`repos/${source}/git/ref/tags/${tag}`).object;
+if (reference.type === 'tag') reference = sourceApi(`repos/${source}/git/tags/${reference.sha}`).object;
 assert.equal(reference.type, 'commit');
 for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop Release']]) {
-  let run = api(`repos/${source}/actions/runs/${runId}`);
+  let run = sourceApi(`repos/${source}/actions/runs/${runId}`);
   const deadline = Date.now() + 10 * 60 * 1000;
   while (run.status !== 'completed' && Date.now() < deadline) {
     console.log(`Waiting for ${workflow} (${runId}) to complete...`);
     await new Promise(resolve => setTimeout(resolve, 30_000));
-    run = api(`repos/${source}/actions/runs/${runId}`);
+    run = sourceApi(`repos/${source}/actions/runs/${runId}`);
   }
   assert.equal(run.name, workflow, `Unexpected workflow for ${runId}`);
   assert.equal(run.head_sha, reference.sha, 'Build must match the annotated source tag');
@@ -37,7 +42,7 @@ for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop 
 
 for (const [run, name] of [[packageRun, 'application-package'], [desktopRun, 'desktop-macos'], [desktopRun, 'desktop-windows']]) {
   console.log(`Downloading verified ${name} from source run ${run}`);
-  gh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
+  sourceGh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
 }
 const files = fs.readdirSync(root, { recursive: true, withFileTypes: true })
   .filter(item => item.isFile())
@@ -95,7 +100,7 @@ for (const checksumFile of ['SHA256SUMS-package.txt', 'SHASUMS256-windows.txt', 
 const checksumPath = path.join(root, 'SHA256SUMS');
 fs.writeFileSync(checksumPath, (await Promise.all([...byName].map(async ([name, file]) => `${await hash(file, 'sha256')}  ${name}`))).join('\n') + '\n');
 byName.set('SHA256SUMS', checksumPath);
-const changelogResponse = api(`repos/${source}/contents/CHANGELOG.md?ref=${reference.sha}`);
+const changelogResponse = sourceApi(`repos/${source}/contents/CHANGELOG.md?ref=${reference.sha}`);
 const changelog = Buffer.from(changelogResponse.content, 'base64').toString('utf8');
 const section = changelog.split(/^## /m).find(value => value.startsWith(`${version} `));
 assert(section, 'Source changelog must describe this release');
