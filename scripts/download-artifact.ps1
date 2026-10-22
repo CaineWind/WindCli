@@ -16,7 +16,8 @@ try {
     $client.DefaultRequestHeaders.UserAgent.ParseAdd('WindCli-Publisher')
     $token = if ($env:SOURCE_GH_TOKEN) { $env:SOURCE_GH_TOKEN } else { (gh auth token).Trim() }
     $client.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $token)
-    $response = $client.GetAsync("https://api.github.com/repos/$Repository/actions/artifacts/$($artifact[0].id)/zip").GetAwaiter().GetResult()
+    $requestId = [Guid]::NewGuid().ToString('N')
+    $response = $client.GetAsync("https://api.github.com/repos/$Repository/actions/artifacts/$($artifact[0].id)/zip?request=$requestId").GetAwaiter().GetResult()
     if ([int]$response.StatusCode -ne 302) { throw "Artifact redirect failed: $($response.StatusCode)" }
     $downloadUrl = $response.Headers.Location.AbsoluteUri
 } finally { $client.Dispose() }
