@@ -18,7 +18,7 @@ The existing application source checkout remains separate. Its desktop updater a
 
 ## Application Publication
 
-Build the application's version tag in `CaineWind/wacli` using its `Release` and
+Build the application's version tag in `CaineWind/wind-agent` using its `Release` and
 `Desktop Release` workflows. After both succeed, run this repository's
 `Application Publication` workflow with the tag and the two source run IDs.
 It verifies that both successful push runs match the annotated source tag,
@@ -27,7 +27,7 @@ checksums and server runtime versions, and publishes all assets together as
 the latest stable desktop release. It uses this repository's GitHub token for
 publication and does not publish to npm. When the source repository is private,
 configure `SOURCE_REPOSITORY_READ_TOKEN` with read-only Contents and Actions access
-to `CaineWind/wacli`. Do not store a broadly scoped local maintainer token.
+to `CaineWind/wind-agent`. Do not store a broadly scoped local maintainer token.
 
 Maintainers can instead run `scripts/publish-application.mjs` locally with their
 existing GitHub CLI authentication, without exporting or uploading any credential.

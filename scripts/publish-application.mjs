@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { auditProductArchive } from './audit-product-archive.mjs';
 
-const source = 'CaineWind/wacli';
+const source = 'CaineWind/wind-agent';
 const destination = 'CaineWind/WindCli';
 const tag = process.env.RELEASE_TAG || '';
 const packageRun = process.env.PACKAGE_RUN || '';

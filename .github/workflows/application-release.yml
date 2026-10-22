@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       package_run:
-        description: Successful Release workflow run in CaineWind/wacli
+        description: Successful Release workflow run in CaineWind/wind-agent
         required: true
         type: string
       desktop_run:
-        description: Successful Desktop Release workflow run in CaineWind/wacli
+        description: Successful Desktop Release workflow run in CaineWind/wind-agent
         required: true
         type: string
 

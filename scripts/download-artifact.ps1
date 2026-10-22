@@ -20,18 +20,28 @@ try {
     if ([int]$response.StatusCode -ne 302) { throw "Artifact redirect failed: $($response.StatusCode)" }
     $downloadUrl = $response.Headers.Location.AbsoluteUri
 } finally { $client.Dispose() }
-$cache = Join-Path (Split-Path $Destination) ".downloads/$($artifact[0].id)"
+$cache = Join-Path (Split-Path $Destination) ".downloads/$($artifact[0].id)-1mb"
 [System.IO.Directory]::CreateDirectory($cache) | Out-Null
 $size = [long]$artifact[0].size_in_bytes
-$chunkSize = 4MB
+$chunkSize = 1MB
 $count = [int][Math]::Ceiling($size / $chunkSize)
 0..($count - 1) | ForEach-Object -Parallel {
     $start = [long]$_ * $using:chunkSize
     $end = [Math]::Min($start + $using:chunkSize - 1, $using:size - 1)
     $chunk = Join-Path $using:cache "$_.part"
     if ((Test-Path -LiteralPath $chunk) -and (Get-Item -LiteralPath $chunk).Length -eq ($end - $start + 1)) { return }
-    & curl.exe --fail --silent --show-error --connect-timeout 20 --max-time 240 --retry 5 --retry-all-errors --range "$start-$end" --output $chunk $using:downloadUrl
-    if ($LASTEXITCODE -or (Get-Item -LiteralPath $chunk).Length -ne ($end - $start + 1)) { throw "Invalid artifact chunk $_" }
+    $PSNativeCommandUseErrorActionPreference = $false
+    $complete = $false
+    for ($attempt = 0; $attempt -lt 6; $attempt++) {
+        $curlOutput = & curl.exe --fail --silent --show-error --connect-timeout 30 --max-time 180 --range "$start-$end" --output $chunk $using:downloadUrl 2>&1
+        if ($LASTEXITCODE -eq 0 -and (Get-Item -LiteralPath $chunk).Length -eq ($end - $start + 1)) {
+            $complete = $true
+            break
+        }
+        Write-Host "Retrying $using:Name segment $($_ + 1)/$using:count"
+        Start-Sleep -Seconds 2
+    }
+    if (-not $complete) { throw "Invalid artifact chunk $_ after six attempts: $curlOutput" }
     Write-Host "Downloaded $using:Name segment $($_ + 1)/$using:count"
 } -ThrottleLimit 32
 $archive = Join-Path $cache 'artifact.zip'
