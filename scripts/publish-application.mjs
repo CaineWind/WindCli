@@ -41,7 +41,7 @@ for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop 
   assert.equal(run.conclusion, 'success', `Source build ${runId} must succeed first`);
 }
 
-for (const [run, name] of [[packageRun, 'application-package'], [desktopRun, 'desktop-macos'], [desktopRun, 'desktop-windows']]) {
+for (const [run, name] of [[desktopRun, 'desktop-macos'], [desktopRun, 'desktop-windows']]) {
   console.log(`Downloading verified ${name} from source run ${run}`);
   if (process.platform === 'win32') {
     execFileSync('pwsh', ['-NoProfile', '-File', 'scripts/download-artifact.ps1', '-Repository', source,
@@ -50,7 +50,7 @@ for (const [run, name] of [[packageRun, 'application-package'], [desktopRun, 'de
     sourceGh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
   }
 }
-const files = ['application-package', 'desktop-macos', 'desktop-windows'].flatMap(directory =>
+const files = ['desktop-macos', 'desktop-windows'].flatMap(directory =>
   fs.readdirSync(path.join(root, directory), { recursive: true, withFileTypes: true }))
   .filter(item => item.isFile())
   .map(item => path.join(item.parentPath, item.name));
@@ -81,21 +81,23 @@ for (const metadata of ['latest.yml', 'latest-mac.yml']) {
     if (entry.size) assert.equal(fs.statSync(byName.get(name)).size, entry.size);
   }
 }
-assert(byName.has(`wind-agent-cli-${version}.tgz`), 'Missing standalone application package');
 for (const suffix of ['.exe', '.dmg', '.zip']) {
   assert([...byName.keys()].some(name => name.endsWith(suffix)), `Missing ${suffix} installer`);
 }
 const bundles = [...byName.keys()].filter(name => name.startsWith(`cloudcli-local-server-${version}-`) && name.endsWith('.tar.gz'));
 assert.equal(bundles.length, 2, 'Both desktop server runtimes are required');
-for (const name of [`wind-agent-cli-${version}.tgz`, ...bundles]) auditProductArchive(byName.get(name));
+for (const name of bundles) auditProductArchive(byName.get(name));
 for (const name of bundles) {
   assert(byName.has(`${name}.sha256`), `Missing checksum for ${name}`);
   const checksum = fs.readFileSync(byName.get(`${name}.sha256`), 'utf8').trim().split(/\s+/)[0];
   assert.equal(await hash(byName.get(name), 'sha256'), checksum);
   const metadata = JSON.parse(execFileSync('tar', ['-xOf', byName.get(name), './package.json'], { encoding: 'utf8' }));
   assert.equal(metadata.version, version, `Runtime version mismatch: ${name}`);
+  // Runtime archives validate the embedded service; only desktop installers are published.
+  byName.delete(name);
+  byName.delete(`${name}.sha256`);
 }
-for (const checksumFile of ['SHA256SUMS-package.txt', 'SHASUMS256-windows.txt', 'SHASUMS256-macos.txt']) {
+for (const checksumFile of ['SHASUMS256-windows.txt', 'SHASUMS256-macos.txt']) {
   assert(byName.has(checksumFile), `Missing build checksums: ${checksumFile}`);
   for (const line of fs.readFileSync(byName.get(checksumFile), 'utf8').trim().split('\n')) {
     const match = /^([a-f0-9]{64})\s+\*?(.+)$/.exec(line.trim());
@@ -113,7 +115,7 @@ const changelog = Buffer.from(changelogResponse.content, 'base64').toString('utf
 const section = changelog.split(/^## /m).find(value => value.startsWith(`${version} `));
 assert(section, 'Source changelog must describe this release');
 const notesPath = path.join(root, 'release-notes.md');
-fs.writeFileSync(notesPath, `## ${section.trim()}\n\nApplication source: https://github.com/${source}/tree/${reference.sha}\n\nPackage validation: https://github.com/${source}/actions/runs/${packageRun}\n\nDesktop builds: https://github.com/${source}/actions/runs/${desktopRun}\n\nDownload the Windows EXE or macOS DMG to install. The standalone service package is wind-agent-cli-${version}.tgz. The local server archives are Electron runtimes downloaded by the matching desktop version. Verify downloads against SHA256SUMS.\n\nDesktop artifacts are unsigned; macOS artifacts are not notarized. macOS automatic installation requires signed releases; use the installer for this unsigned build. Existing installations using the previous release repository may need this installer once to migrate to the unified feed. Managed hosting retains control of deployments.\n`);
+fs.writeFileSync(notesPath, `## ${section.trim()}\n\nApplication source: https://github.com/${source}/tree/${reference.sha}\n\nQuality validation: https://github.com/${source}/actions/runs/${packageRun}\n\nDesktop builds: https://github.com/${source}/actions/runs/${desktopRun}\n\nDownload the Windows EXE or macOS DMG to install. Each installer includes the matching local Agent service and runtime; no first-start server download or Node/npm installation is required. Standalone npm and server packages are retired. Verify downloads against SHA256SUMS.\n\nDesktop artifacts are unsigned; macOS artifacts are not notarized. macOS automatic installation requires signed releases; use the installer for this unsigned build.\n`);
 const releases = api(`repos/${destination}/releases?per_page=100`);
 const existing = releases.find(release => release.tag_name === tag);
 if (existing) {

@@ -6,11 +6,11 @@ This is a distribution repository. Product development source, tests, declaratio
 
 | Component | Tag | Asset convention | Latest |
 | --- | --- | --- | --- |
-| Desktop client | `v<version>` | Installer, updater metadata and matching server bundles | Desktop stable releases only |
-| Standalone web service | `web-v<version>` | Platform-specific server bundle and SHA-256 checksums | No |
+| Desktop client | `v<version>` | Self-contained installer, updater metadata and SHA-256 checksums | Desktop stable releases only |
+| Standalone web service | Retired | No new standalone application packages | No |
 | WindBrowser MCP | `mcp-v<version>` | npm-installable tarball, Chrome extension ZIP and SHA256SUMS | No |
 
-Desktop server bundles may also accompany the corresponding `v<version>` desktop release because the desktop installer requests that exact version tag. Preserve existing bundle names expected by the installer. MCP and web tags must not replace desktop latest-release metadata. A component release does not imply that other components have been built or released.
+From v1.47.13, desktop installers embed the matching local Agent service and runtime dependencies. Do not publish standalone application npm tarballs or server bundles. Internal server archives remain build-validation inputs and are audited before being excluded from publication. Existing published releases remain unchanged. MCP tags must not replace desktop latest-release metadata.
 
 GitHub's `/releases/latest` endpoint is not a component filter: before the first desktop release exists it may return the only stable MCP release even when that release was created with `--latest=false`. Publish desktop stable releases with `--latest` and their required updater metadata, and verify the latest endpoint resolves to that desktop tag. MCP and web downloaders must select their explicit component tags rather than the generic latest endpoint.
 
@@ -23,7 +23,7 @@ Build the application's version tag in `CaineWind/wind-agent` using its `Release
 `Application Publication` workflow with the tag and the two source run IDs.
 It verifies that both successful push runs match the annotated source tag,
 downloads their artifacts, validates updater SHA-512 values, build SHA-256
-checksums and server runtime versions, and publishes all assets together as
+checksums and embedded service build versions, and publishes desktop assets together as
 the latest stable desktop release. It uses this repository's GitHub token for
 publication and does not publish to npm. When the source repository is private,
 configure `SOURCE_REPOSITORY_READ_TOKEN` with read-only Contents and Actions access
@@ -39,7 +39,7 @@ checks the assembled release files against the original build checksums before p
 
 The publisher refuses to modify public releases or overwrite existing assets.
 Future application publication also rejects first-party TypeScript, declarations,
-source maps and unminified product JavaScript in the CLI/Web package and server
+source maps and unminified product JavaScript in the internal server
 runtime archives. This validation can require changes in the private application's
 build pipeline before a new version may be published; it must not be bypassed to
 ship development source. Existing legacy releases are not changed automatically.
