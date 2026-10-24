@@ -1,8 +1,16 @@
 # WindCli Releases
 
-WindCli 客户端、Web 服务和 MCP 的统一 GitHub Release 仓库。
+WindAgent 桌面客户端与 WindBrowser MCP 的统一 GitHub Release 仓库。
 
-旧版 `v1.47.3` 客户端、CLI/Web 包和配套服务运行包已于 2026-10-18 下架，因为发布包包含开发源码。旧客户端的首次运行下载和更新检查可能失败；新的客户端/Web 发布需通过构建产物检查后恢复。目前可下载的是下方 MCP 发布。
+## WindAgent 桌面客户端
+
+[下载最新桌面安装包](https://github.com/CaineWind/WindCli/releases/latest)。
+
+从 v1.47.13 开始，安装包内置本地 Agent 服务与运行环境，首次启动无需下载额外服务包，也无需安装 Node/npm。客户端统一管理服务启动与更新；文件、Git、终端和 Agent 会话仍由内置服务处理。独立 npm 应用包与后台服务安装方式已停止支持。Agent 提供方仍可能需要单独安装及登录。
+
+旧 npm 服务请先通过原有服务管理器停止，再启动桌面客户端。升级保留原有用户数据。各版本支持的平台与签名状态以对应 Release 说明为准，下载后可核对 `SHA256SUMS`。
+
+旧版 `v1.47.3` 因包含开发源码已下架，不再恢复。其他历史发行包保持原样。
 
 ## WindBrowser MCP
 
@@ -22,7 +30,7 @@ windbrowser-mcp serve
 
 本仓库只管理构建产物、下载说明和发布自动化。产品开发源码在独立源码项目管理，不放进这个仓库。MCP 后端、控制台和扩展在源码项目构建并压缩，发布包不包含 TypeScript 源文件、测试、source map 或类型声明。
 
-桌面客户端使用 `v<版本>`，Web 服务使用 `web-v<版本>`，MCP 使用 `mcp-v<版本>`。MCP Release 只包含 MCP 与配套扩展，桌面安装程序在对应客户端 Release 中下载。
+桌面客户端使用 `v<版本>`，MCP 使用 `mcp-v<版本>`。MCP Release 只包含 MCP 与配套扩展；独立 Web 服务不再发布。
 
 ## License
 
