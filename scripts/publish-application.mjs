@@ -41,7 +41,7 @@ for (const [runId, workflow] of [[packageRun, 'Release'], [desktopRun, 'Desktop 
   assert.equal(run.conclusion, 'success', `Source build ${runId} must succeed first`);
 }
 
-for (const [run, name] of [[desktopRun, 'desktop-macos'], [desktopRun, 'desktop-windows']]) {
+for (const [run, name] of [[desktopRun, 'desktop-windows']]) {
   console.log(`Downloading verified ${name} from source run ${run}`);
   if (process.platform === 'win32') {
     execFileSync('pwsh', ['-NoProfile', '-File', 'scripts/download-artifact.ps1', '-Repository', source,
@@ -50,7 +50,7 @@ for (const [run, name] of [[desktopRun, 'desktop-macos'], [desktopRun, 'desktop-
     sourceGh('run', 'download', run, '--repo', source, '--name', name, '--dir', path.join(root, name));
   }
 }
-const files = ['desktop-macos', 'desktop-windows'].flatMap(directory =>
+const files = ['desktop-windows'].flatMap(directory =>
   fs.readdirSync(path.join(root, directory), { recursive: true, withFileTypes: true }))
   .filter(item => item.isFile())
   .map(item => path.join(item.parentPath, item.name));
@@ -60,6 +60,15 @@ for (const file of files) {
   assert(!byName.has(name), `Duplicate release asset ${name}`);
   byName.set(name, file);
 }
+const expectedAssets = [
+  `windagent-desktop-${version}-win-x64.exe`,
+  `windagent-desktop-${version}-win-x64.exe.blockmap`,
+  'latest.yml', 'SHASUMS256-windows.txt',
+  `cloudcli-local-server-${version}-win-x64.tar.gz`,
+  `cloudcli-local-server-${version}-win-x64.tar.gz.sha256`,
+];
+assert.equal(byName.size, expectedAssets.length, 'Unexpected Windows release artifact list');
+for (const name of expectedAssets) assert(byName.has(name), `Missing Windows release artifact ${name}`);
 const hash = (file, algorithm, encoding = 'hex') => new Promise((resolve, reject) => {
   const digest = crypto.createHash(algorithm);
   const stream = fs.createReadStream(file);
@@ -69,7 +78,7 @@ const hash = (file, algorithm, encoding = 'hex') => new Promise((resolve, reject
 });
 const require = createRequire(import.meta.url);
 const yaml = require(path.join(process.env.MANIFEST_PARSER_ROOT, 'node_modules/js-yaml'));
-for (const metadata of ['latest.yml', 'latest-mac.yml']) {
+for (const metadata of ['latest.yml']) {
   assert(byName.has(metadata), `Missing ${metadata}`);
   const manifest = yaml.load(fs.readFileSync(byName.get(metadata), 'utf8'));
   assert.equal(manifest.version, version);
@@ -81,11 +90,12 @@ for (const metadata of ['latest.yml', 'latest-mac.yml']) {
     if (entry.size) assert.equal(fs.statSync(byName.get(name)).size, entry.size);
   }
 }
-for (const suffix of ['.exe', '.dmg', '.zip']) {
+for (const suffix of ['.exe']) {
   assert([...byName.keys()].some(name => name.endsWith(suffix)), `Missing ${suffix} installer`);
 }
 const bundles = [...byName.keys()].filter(name => name.startsWith(`cloudcli-local-server-${version}-`) && name.endsWith('.tar.gz'));
-assert.equal(bundles.length, 2, 'Both desktop server runtimes are required');
+assert.equal(bundles.length, 1, 'The matching Windows desktop server runtime is required');
+assert(bundles[0].endsWith('-win-x64.tar.gz'), 'Windows x64 runtime is required');
 for (const name of bundles) auditProductArchive(byName.get(name));
 for (const name of bundles) {
   assert(byName.has(`${name}.sha256`), `Missing checksum for ${name}`);
@@ -97,7 +107,7 @@ for (const name of bundles) {
   byName.delete(name);
   byName.delete(`${name}.sha256`);
 }
-for (const checksumFile of ['SHASUMS256-windows.txt', 'SHASUMS256-macos.txt']) {
+for (const checksumFile of ['SHASUMS256-windows.txt']) {
   assert(byName.has(checksumFile), `Missing build checksums: ${checksumFile}`);
   for (const line of fs.readFileSync(byName.get(checksumFile), 'utf8').trim().split('\n')) {
     const match = /^([a-f0-9]{64})\s+\*?(.+)$/.exec(line.trim());
@@ -115,7 +125,7 @@ const changelog = Buffer.from(changelogResponse.content, 'base64').toString('utf
 const section = changelog.split(/^## /m).find(value => value.startsWith(`${version} `));
 assert(section, 'Source changelog must describe this release');
 const notesPath = path.join(root, 'release-notes.md');
-fs.writeFileSync(notesPath, `## ${section.trim()}\n\nApplication source: https://github.com/${source}/tree/${reference.sha}\n\nQuality validation: https://github.com/${source}/actions/runs/${packageRun}\n\nDesktop builds: https://github.com/${source}/actions/runs/${desktopRun}\n\nDownload the Windows EXE or macOS DMG to install. Each installer includes the matching local Agent service and runtime; no first-start server download or Node/npm installation is required. Standalone npm and server packages are retired. Verify downloads against SHA256SUMS.\n\nDesktop artifacts are unsigned; macOS artifacts are not notarized. macOS automatic installation requires signed releases; use the installer for this unsigned build.\n`);
+fs.writeFileSync(notesPath, `## ${section.trim()}\n\nApplication source: https://github.com/${source}/tree/${reference.sha}\n\nQuality validation: https://github.com/${source}/actions/runs/${packageRun}\n\nDesktop builds: https://github.com/${source}/actions/runs/${desktopRun}\n\nDownload the Windows x64 EXE to install. Each installer includes the matching local Agent service and runtime; no first-start server download or Node/npm installation is required. Standalone npm and server packages are retired. Verify downloads against SHA256SUMS.\n\nThe Windows installer is unsigned. Windows is the supported platform for this application release.\n`);
 const releases = api(`repos/${destination}/releases?per_page=100`);
 const existing = releases.find(release => release.tag_name === tag);
 if (existing) {
@@ -129,7 +139,7 @@ if (existing) {
       `Refusing to overwrite mismatched draft asset: ${asset.name}`);
   }
 } else {
-  gh('release', 'create', tag, '--repo', destination, '--target', 'main', '--draft', '--title', `WindCli ${tag}`, '--notes-file', notesPath);
+  gh('release', 'create', tag, '--repo', destination, '--target', 'main', '--draft', '--title', `WindAgent ${tag}`, '--notes-file', notesPath);
 }
 const uploaded = new Set(existing?.assets.map(asset => asset.name));
 const pending = [...byName].filter(([name]) => !uploaded.has(name));

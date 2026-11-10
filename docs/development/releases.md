@@ -18,12 +18,18 @@ The existing application source checkout remains separate. Its desktop updater a
 
 ## Application Publication
 
+Application releases from v1.47.26 target Windows x64. The source `Release`
+workflow runs the complete quality gates on Windows, and `Desktop Release`
+builds the self-contained Windows installer. Older macOS attachments remain
+available in their original releases; new application publications require no
+macOS build or installer.
+
 Build the application's version tag in `CaineWind/wind-agent` using its `Release` and
 `Desktop Release` workflows. After both succeed, run this repository's
 `Application Publication` workflow with the tag and the two source run IDs.
 It verifies that both successful push runs match the annotated source tag,
-downloads their artifacts, validates updater SHA-512 values, build SHA-256
-checksums and embedded service build versions, and publishes desktop assets together as
+downloads the Windows artifacts, validates updater SHA-512 values, build SHA-256
+checksums and the embedded Windows service version, and publishes desktop assets together as
 the latest stable desktop release. It uses this repository's GitHub token for
 publication and does not publish to npm. When the source repository is private,
 configure `SOURCE_REPOSITORY_READ_TOKEN` with read-only Contents and Actions access
@@ -56,9 +62,10 @@ repository-scoped publication tokens against the new repository before using the
 An interrupted draft can resume only when its source commit and every existing
 asset's size and GitHub SHA-256 digest match the validated local files. Remaining
 assets upload concurrently; remote digests are checked again before publishing.
-Source commit and build links are retained in the release notes. Unsigned macOS
-builds are available for manual installation; automatic installation requires
-Apple code-signing credentials in the application's desktop build workflow.
+Source commit and build links are retained in the release notes. The publisher
+requires exactly the versioned Windows installer, blockmap, latest.yml, build
+checksums and matching internal runtime/checksum; unexpected artifacts are rejected.
+Only the installer, blockmap, update metadata and checksums reach the public release.
 
 ## MCP Publication
 

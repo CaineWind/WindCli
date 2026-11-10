@@ -7,6 +7,10 @@ installers, updater metadata and checksums only for application releases. Standa
 npm application packages and service bundles are retired. WindBrowser MCP retains
 its independent mcp-v release convention and distribution.
 
+From v1.47.26, application releases target Windows x64. Validate the complete
+source quality gates on Windows, publish the EXE, blockmap, latest.yml and checksums
+as a stable latest release, and preserve older macOS release attachments.
+
 Use PowerShell 7 (`pwsh`) for Windows commands. Keep source, credentials and user data separate. Never commit `.env`, tokens, databases, browser profiles, node_modules, logs or local runtime state.
 
 This is a distribution repository, not a development source repository. MCP development source lives in the sibling `../WindBrowser` directory. Application source remains in `../wind-cli`. Never add application TypeScript, unminified browser/console code, tests, source maps or declarations here. Keep built/minified product code in Release attachments. Documentation, licenses and publication automation may be tracked here. Preserve component licenses. Release conventions and validation are in `docs/development/releases.md`.
