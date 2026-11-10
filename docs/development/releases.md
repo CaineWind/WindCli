@@ -18,11 +18,16 @@ The existing application source checkout remains separate. Its desktop updater a
 
 ## Application Publication
 
-Application releases from v1.47.26 target Windows x64. The source `Release`
+Application releases from v1.47.28 target Windows x64. The source `Release`
 workflow runs the complete quality gates on Windows, and `Desktop Release`
 builds the self-contained Windows installer. Older macOS attachments remain
 available in their original releases; new application publications require no
 macOS build or installer.
+
+The complete backend suite runs in four Windows/Node 22 shards alongside the
+frontend, build and desktop checks. Database-heavy test files have a bounded
+five-minute aggregate timeout. Versions 1.47.25 through 1.47.27 were unpublished
+validation candidates; their source tags and CI records are retained.
 
 Build the application's version tag in `CaineWind/wind-agent` using its `Release` and
 `Desktop Release` workflows. After both succeed, run this repository's

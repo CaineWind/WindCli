@@ -7,7 +7,7 @@ installers, updater metadata and checksums only for application releases. Standa
 npm application packages and service bundles are retired. WindBrowser MCP retains
 its independent mcp-v release convention and distribution.
 
-From v1.47.26, application releases target Windows x64. Validate the complete
+From v1.47.28, application releases target Windows x64. Validate the complete
 source quality gates on Windows, publish the EXE, blockmap, latest.yml and checksums
 as a stable latest release, and preserve older macOS release attachments.
 
